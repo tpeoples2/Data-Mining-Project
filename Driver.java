@@ -1,6 +1,4 @@
 // TODO: deal with user input errors
-// TODO: task 2
-// TODO: task 3
 // TODO: task 4
 // TODO: deal with sanitation (last)
 
@@ -35,9 +33,21 @@ class Driver {
             // continue
         }
         
-        createCandidatesTable(conn, stmt);
-        createLargeSetTable(conn, stmt);
-        createTempTable(conn, stmt);
+        try {
+            createCandidatesTable(conn, stmt);
+        } catch (SQLException ex) {
+            // continue
+        }
+        try {
+            createLargeSetTable(conn, stmt);
+        } catch (SQLException ex) {
+            // continue
+        }
+        try {
+            createTempTable(conn, stmt);
+        } catch (SQLException ex) {
+            // continue
+        }
 
         int selection;
         do {
@@ -142,9 +152,70 @@ class Driver {
     }
 
     static void task_three(Connection conn, Statement stmt) throws SQLException {
-    
-    }
+        double support = getFrequentISSupportLevel();   
+        int max_size = getMaxSize();
+       
+        clearTables(conn, stmt);
 
+        String initializeCandidateSet = "INSERT INTO CANDIDATES (SELECT ROWNUM, ITEMID FROM ITEMS)";
+        stmt.executeUpdate(initializeCandidateSet);
+        
+        CallableStatement initLargeSet = conn.prepareCall("{call InitLargeSet(?)}");
+        initLargeSet.setDouble(1, support);
+        initLargeSet.executeUpdate();
+        
+        CallableStatement createCandidateSet = conn.prepareCall("{call CreateCandidateSet(?)}");
+        CallableStatement trimCandidateSet = conn.prepareCall("{call TrimCandidateSet(?)}");
+        CallableStatement filterIntoLargeSet = conn.prepareCall("{call FilterIntoLargeSet(?)}");
+
+        for (int i = 2; i <= max_size; i++) {
+            createCandidateSet.setInt(1, i);
+            createCandidateSet.executeUpdate();
+
+            trimCandidateSet.setInt(1, i - 1);
+            trimCandidateSet.executeUpdate();
+
+            filterIntoLargeSet.setDouble(1, support);
+            filterIntoLargeSet.executeUpdate();
+        }
+
+        String num_of_sets_query = "SELECT COUNT(DISTINCT SETID) AS COUNT FROM LARGESET";
+        ResultSet count_rset = stmt.executeQuery(num_of_sets_query);
+        count_rset.next();
+        int num_of_sets = count_rset.getInt("COUNT");
+        System.out.println(num_of_sets);
+
+        System.out.println("\n    ----------------------------------------------------------------");
+        System.out.println("\tThe following sets appear in at least " + support + "% of \n\tthe database transactions:\n");
+
+        String query = "";
+        ResultSet items_rset;
+
+        if (num_of_sets == 0) {
+            System.out.println("\tNo items found.");
+        }
+        
+        for (int i = 1; i <= num_of_sets; i++) {
+            query = "SELECT ITEMNAME FROM LARGESET, ITEMS WHERE LARGESET.ITEMID = ITEMS.ITEMID AND SETID = " + i; 
+            items_rset = stmt.executeQuery(query);
+            
+            boolean had_atleast_one_result = false;
+
+            if (items_rset.next()) {
+                System.out.print("\t\t{ " + items_rset.getString("ITEMNAME"));
+                had_atleast_one_result = true;
+            }
+            while (items_rset.next()) {
+                System.out.print(", " + items_rset.getString("ITEMNAME"));
+            }
+            if (had_atleast_one_result) {
+                System.out.print(" }\n");
+            }
+        }
+            
+        System.out.println("    -----------------------------------------------------------------\n");
+    }
+    
     static void task_four(Connection conn, Statement stmt) throws SQLException {
     
     }
@@ -160,19 +231,16 @@ class Driver {
 
     static void dropCandidatesTable(Connection conn, Statement stmt) throws SQLException {
         String dropTable = "DROP TABLE CANDIDATES";
-
         stmt.executeUpdate(dropTable);
     }
 
     static void dropLargeSetTable(Connection conn, Statement stmt) throws SQLException {
         String dropTable = "DROP TABLE LARGESET";
-
         stmt.executeUpdate(dropTable);
     }
 
     static void dropTempTable(Connection conn, Statement stmt) throws SQLException {
         String dropTable = "DROP TABLE TEMP";
-
         stmt.executeUpdate(dropTable);
     }
 
@@ -181,7 +249,6 @@ class Driver {
                                             "SETID NUMBER,\n" + 
                                             "ITEMID NUMBER," +
                                             "PRIMARY KEY(SETID, ITEMID))";
-
         stmt.executeUpdate(createCandidatesTable);
     }
 
@@ -190,7 +257,6 @@ class Driver {
                                             "SETID NUMBER,\n" + 
                                             "ITEMID NUMBER," +
                                             "PRIMARY KEY(SETID, ITEMID))";
-
         stmt.executeUpdate(createLargeSetTable);
     }
 
@@ -198,7 +264,6 @@ class Driver {
         String createTempTable = "CREATE TABLE TEMP (\n" + 
                                             "ITEMID NUMBER,\n" + 
                                             "PRIMARY KEY(ITEMID))";
-
         stmt.executeUpdate(createTempTable);
     }
 
@@ -218,24 +283,17 @@ class Driver {
         return selection;
     }
 
+    static int getMaxSize() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("What do you want the max size of a frequent itemset to be? ");
+        int max_size = scanner.nextInt();
+        return max_size;
+    }
+
     static double getFrequentISSupportLevel() {
         Scanner scanner = new Scanner(System.in);
         System.out.print("At what support do you want to mine frequent itemsets? ");
         double support = scanner.nextDouble();
         return support;
     }
-    static void printItemString(String itemname, double percent) {
-        if (itemname.length() > 15) {
-            System.out.println("\t\t" + itemname + "\t\t" + percent + "%");
-        }
-        else if (itemname.length() < 8) {
-            System.out.println("\t\t" + itemname + "\t\t\t\t" + percent + "%");
-        }
-        else {
-            System.out.println("\t\t" + itemname + "\t\t\t" + percent + "%");
-        } 
-    
-    }
-
-    
 }
