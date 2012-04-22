@@ -1,5 +1,3 @@
-SET SERVEROUTPUT ON;
-
 CREATE OR REPLACE PROCEDURE CreateCandidateSet(set_size IN NUMBER)
 IS
     CURSOR glue_cursor IS SELECT DISTINCT LSA.SETID AS IDA, LSB.SETID AS IDB
@@ -19,8 +17,8 @@ IS
     duplicate_check NUMBER;
 BEGIN
     fill_counter := 0;
-    --SELECT COUNT(DISTINCT SETID) + 1 INTO temp_counter FROM CANDIDATES;
     temp_counter := 1;
+    DELETE FROM TEMP;
     DELETE FROM CANDIDATES;
     FOR setid_pair IN glue_cursor LOOP
         INSERT INTO TEMP (SELECT DISTINCT ITEMID
