@@ -18,7 +18,7 @@ class Driver {
                                                       username, password);
 
         stmt = conn.createStatement();
-       
+
         initializeTables();
         
         int selection;
@@ -116,28 +116,26 @@ class Driver {
         System.out.println("\tThe following sets appear in at least " + support + "% of \n\tthe database transactions:\n");
         System.out.println("\tThe following association rules are valid for support level " + support + "% and confidence level " + confidence + "%:\n");
 
-        String ar_query = "";
-        ResultSet rules_rset;
-
-        String largeset_query = "";
-        ResultSet largeset_rset;
-        
         if (num_of_associationrules == 0) {
             System.out.println("\tNo rules found.");
         }
         
-        for (int i = 1; i <= num_of_associationrules; i++) {
-            ar_query = "SELECT SETID, ITEMNAME, SUPPORT, CONFIDENCE FROM ASSOCIATIONRULES, ITEMS WHERE ITEMS.ITEMID = ASSOCIATIONRULES.ITEMID";
-            rules_rset = stmt.executeQuery(ar_query); 
+        String ar_query = "SELECT SETID, ITEMNAME, SUPPORT, CONFIDENCE FROM ASSOCIATIONRULES, ITEMS WHERE ITEMS.ITEMID = ASSOCIATIONRULES.ITEMID";
+        ResultSet ar_rset = stmt.executeQuery(ar_query);
 
-            rules_rset.next();
-            int setid = rules_rset.getInt("SETID");
-            String itemname = rules_rset.getString("ITEMNAME");
-            double actual_support = rules_rset.getDouble("SUPPORT");
-            double actual_confidence = rules_rset.getDouble("CONFIDENCE");
+        String largeset_query = "";
+        ResultSet largeset_rset;
+
+        Statement stmt2 = conn.createStatement();
+
+        while (ar_rset.next()) {
+            int setid = ar_rset.getInt("SETID");
+            String itemname = ar_rset.getString("ITEMNAME");
+            double actual_support = ar_rset.getDouble("SUPPORT");
+            double actual_confidence = ar_rset.getDouble("CONFIDENCE");
 
             largeset_query = "SELECT ITEMNAME FROM LARGESET, ITEMS WHERE LARGESET.ITEMID = ITEMS.ITEMID AND SETID = " + setid;
-            largeset_rset = stmt.executeQuery(largeset_query);
+            largeset_rset = stmt2.executeQuery(largeset_query);
 
             largeset_rset.next();
             System.out.print("\t\t{ " + largeset_rset.getString("ITEMNAME"));
