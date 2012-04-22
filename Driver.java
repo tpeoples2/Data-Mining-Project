@@ -100,7 +100,7 @@ class Driver {
     }
 
     static void createAssociationRules(double support, double confidence) throws SQLException {
-        CallableStatement createAR = conn.prepareCall("{call CreateAssociationRules(?, ?)}");
+        CallableStatement createAR = conn.prepareCall("{call CreateAssociationRuleSet(?, ?)}");
         createAR.setDouble(1, support);
         createAR.setDouble(2, confidence);
         createAR.executeUpdate();
