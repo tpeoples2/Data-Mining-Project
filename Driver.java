@@ -1,6 +1,3 @@
-// TODO: deal with user input errors
-// TODO: deal with sanitation (last)
-
 import java.sql.*;
 import java.util.Scanner;
 
@@ -87,12 +84,20 @@ class Driver {
         CallableStatement trimCandidateSet = conn.prepareCall("{call TrimCandidateSet(?)}");
         CallableStatement filterIntoLargeSet = conn.prepareCall("{call FilterIntoLargeSet(?)}");
 
+        loop:
         for (int i = 2; i <= max_size; i++) {
             createCandidateSet.setInt(1, i);
             createCandidateSet.executeUpdate();
 
             trimCandidateSet.setInt(1, i - 1);
             trimCandidateSet.executeUpdate();
+
+            String candidate_query = "SELECT COUNT(*) AS COUNT FROM CANDIDATES";
+            ResultSet candidate_query_rset = stmt.executeQuery(candidate_query);
+            candidate_query_rset.next();
+            if (candidate_query_rset.getInt("COUNT") == 0) {
+                break loop; 
+            }
 
             filterIntoLargeSet.setDouble(1, support);
             filterIntoLargeSet.executeUpdate();
@@ -113,13 +118,16 @@ class Driver {
         int num_of_associationrules = count_rset.getInt("COUNT");
 
         System.out.println("\n    ----------------------------------------------------------------");
-        System.out.println("\tThe following association rules are valid for support level " + support + "% and confidence level " + confidence + "%:\n");
+        System.out.println("\tThe following association rules are valid for support level " + 
+                           support + "% and confidence level " + confidence + "%:\n");
 
         if (num_of_associationrules == 0) {
             System.out.println("\tNo rules found.");
         }
         
-        String ar_query = "SELECT SETID, ITEMNAME, SUPPORT, CONFIDENCE FROM ASSOCIATIONRULES, ITEMS WHERE ITEMS.ITEMID = ASSOCIATIONRULES.ITEMID";
+        String ar_query = "SELECT SETID, ITEMNAME, SUPPORT, CONFIDENCE\n" +
+                          "FROM ASSOCIATIONRULES, ITEMS\n" +
+                          "WHERE ITEMS.ITEMID = ASSOCIATIONRULES.ITEMID";
         ResultSet ar_rset = stmt.executeQuery(ar_query);
 
         String largeset_query = "";
@@ -133,7 +141,8 @@ class Driver {
             double actual_support = ar_rset.getDouble("SUPPORT");
             double actual_confidence = ar_rset.getDouble("CONFIDENCE");
 
-            largeset_query = "SELECT ITEMNAME FROM LARGESET, ITEMS WHERE LARGESET.ITEMID = ITEMS.ITEMID AND SETID = " + setid;
+            largeset_query = "SELECT ITEMNAME FROM LARGESET, ITEMS\n" + 
+                             "WHERE LARGESET.ITEMID = ITEMS.ITEMID AND SETID = " + setid;
             largeset_rset = stmt2.executeQuery(largeset_query);
 
             largeset_rset.next();
@@ -143,20 +152,23 @@ class Driver {
             }
             System.out.print(" }");
 
-            System.out.print(" -> { " + itemname + " } ... support = " + actual_support + "%, confidence = " + actual_confidence + "%\n");
+            System.out.print(" -> { " + itemname + " } ... support = " + actual_support +
+                             "%, confidence = " + actual_confidence + "%\n");
         }
 
         System.out.println("    -----------------------------------------------------------------\n");
     }
 
     static void printFrequentItems(double support) throws SQLException {
-        String num_of_sets_query = "SELECT COUNT(DISTINCT SETID) AS COUNT FROM LARGESET";
+        String num_of_sets_query = "SELECT COUNT(DISTINCT SETID) AS COUNT\n" +
+                                   "FROM LARGESET";
         ResultSet count_rset = stmt.executeQuery(num_of_sets_query);
         count_rset.next();
         int num_of_sets = count_rset.getInt("COUNT");
 
         System.out.println("\n    ----------------------------------------------------------------");
-        System.out.println("\tThe following sets appear in at least " + support + "% of \n\tthe database transactions:\n");
+        System.out.println("\tThe following sets appear in at least " + support + 
+                           "% of \n\tthe database transactions:\n");
 
         String query = "";
         ResultSet items_rset;
@@ -166,7 +178,8 @@ class Driver {
         }
         
         for (int i = 1; i <= num_of_sets; i++) {
-            query = "SELECT ITEMNAME, SUPPORT FROM LARGESET, ITEMS WHERE LARGESET.ITEMID = ITEMS.ITEMID AND SETID = " + i; 
+            query = "SELECT ITEMNAME, SUPPORT FROM LARGESET, ITEMS\n" +
+                    "WHERE LARGESET.ITEMID = ITEMS.ITEMID AND SETID = " + i; 
             items_rset = stmt.executeQuery(query);
             
             boolean had_atleast_one_result = false;
