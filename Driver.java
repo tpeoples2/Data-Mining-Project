@@ -113,7 +113,6 @@ class Driver {
         int num_of_associationrules = count_rset.getInt("COUNT");
 
         System.out.println("\n    ----------------------------------------------------------------");
-        System.out.println("\tThe following sets appear in at least " + support + "% of \n\tthe database transactions:\n");
         System.out.println("\tThe following association rules are valid for support level " + support + "% and confidence level " + confidence + "%:\n");
 
         if (num_of_associationrules == 0) {
