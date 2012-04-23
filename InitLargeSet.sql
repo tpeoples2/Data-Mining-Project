@@ -1,10 +1,13 @@
 CREATE OR REPLACE PROCEDURE InitLargeSet(support IN NUMBER)
 AS
-    CURSOR item_cursor IS SELECT ITEMID, (COUNT(*) * 100 / (SELECT COUNT(DISTINCT TRANSID) FROM TRANS)) AS SUPPORT
+    CURSOR item_cursor IS SELECT ITEMID, (COUNT(*) * 100 / 
+                                         (SELECT COUNT(DISTINCT TRANSID) 
+                                          FROM TRANS)) AS SUPPORT
                           FROM TRANS
                           WHERE TRANS.ITEMID IN (SELECT DISTINCT ITEMID FROM CANDIDATES)
                           GROUP BY TRANS.ITEMID
-                          HAVING COUNT(*) * 100 / (SELECT COUNT(DISTINCT TRANSID) FROM TRANS) >= support;
+                          HAVING COUNT(*) * 100 / (SELECT COUNT(DISTINCT TRANSID) 
+                                                   FROM TRANS) >= support;
     single_item item_cursor%ROWTYPE;
     set_size NUMBER;
     fill_counter NUMBER;
@@ -19,7 +22,8 @@ BEGIN
             temp_counter := temp_counter + 1;
             fill_counter := 0;
         END IF;
-        INSERT INTO LARGESET VALUES (temp_counter, single_item.ITEMID, round(single_item.SUPPORT, 1));
+        INSERT INTO LARGESET VALUES (temp_counter, single_item.ITEMID, 
+                                     round(single_item.SUPPORT, 1));
         fill_counter := fill_counter + 1;
     END LOOP;
 END;

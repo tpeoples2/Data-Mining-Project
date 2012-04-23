@@ -13,12 +13,18 @@ BEGIN
     SELECT (COUNT(DISTINCT TRANSID)) INTO no_of_trans FROM trans;
     FOR single_set IN set_cursor LOOP
         no_of_hits := 0;
-        INSERT INTO TEMP (SELECT ITEMID FROM CANDIDATES WHERE SETID = single_set.SETID);
-        SELECT COUNT(DISTINCT TRANSID) INTO no_of_hits FROM TRANS T1 WHERE NOT EXISTS (SELECT * FROM TEMP MINUS SELECT ITEMID FROM TRANS WHERE TRANSID = T1.TRANSID);
+        INSERT INTO TEMP (SELECT ITEMID 
+                          FROM CANDIDATES 
+                          WHERE SETID = single_set.SETID);
+        SELECT COUNT(DISTINCT TRANSID) INTO no_of_hits 
+        FROM TRANS T1 WHERE NOT EXISTS (SELECT * FROM TEMP MINUS
+                                        SELECT ITEMID FROM TRANS 
+                                        WHERE TRANSID = T1.TRANSID);
         single_support := 100 * no_of_hits / no_of_trans;
         IF single_support >= support THEN
             FOR single_item IN item_cursor LOOP
-                INSERT INTO LARGESET VALUES (temp_counter, single_item.ITEMID, round(single_support, 1));
+                INSERT INTO LARGESET VALUES (temp_counter, single_item.ITEMID,
+                                             round(single_support, 1));
             END LOOP;
             temp_counter := temp_counter + 1;
         END IF;

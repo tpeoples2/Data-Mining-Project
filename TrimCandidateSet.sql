@@ -5,7 +5,9 @@ AS
     curs_row curs%ROWTYPE;
 BEGIN
     FOR curs_row IN curs LOOP
-        INSERT INTO TEMP (SELECT ITEMID FROM CANDIDATES WHERE SETID = curs_row.SETID);
+        INSERT INTO TEMP (SELECT ITEMID 
+                          FROM CANDIDATES 
+                          WHERE SETID = curs_row.SETID);
         SELECT COUNT(*) INTO count_check FROM (SELECT LARGESET.SETID
                                                FROM TEMP, LARGESET
                                                WHERE TEMP.ITEMID = LARGESET.ITEMID

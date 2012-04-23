@@ -22,18 +22,29 @@ BEGIN
         INSERT INTO TEMP_CANDIDATES (SELECT DISTINCT ITEMID FROM LARGESET MINUS SELECT * FROM TEMP);
 
         DELETE FROM TEMP_TRANS;
-        INSERT INTO TEMP_TRANS (SELECT DISTINCT T1.TRANSID FROM TRANS T1 WHERE NOT EXISTS (SELECT * FROM TEMP MINUS SELECT ITEMID FROM TRANS T2 WHERE T2.TRANSID = T1.TRANSID));
+        INSERT INTO TEMP_TRANS (SELECT DISTINCT T1.TRANSID 
+                                FROM TRANS T1 
+                                WHERE NOT EXISTS (SELECT * FROM TEMP MINUS 
+                                                  SELECT ITEMID 
+                                                  FROM TRANS T2 WHERE T2.TRANSID = T1.TRANSID));
         SELECT COUNT(*) INTO no_of_hits_with_set FROM TEMP_TRANS;
         FOR candidate_item IN candidate_cursor LOOP
-            SELECT COUNT(*) INTO no_of_hits_both FROM TEMP_TRANS T1 WHERE NOT EXISTS (SELECT ITEMID FROM ITEMS WHERE ITEMID = candidate_item.ITEMID MINUS SELECT ITEMID FROM TEMP_TRANS, TRANS T2 WHERE T1.TRANSID = T2.TRANSID);
+            SELECT COUNT(*) INTO no_of_hits_both 
+            FROM TEMP_TRANS T1 
+            WHERE NOT EXISTS (SELECT ITEMID 
+                              FROM ITEMS 
+                              WHERE ITEMID = candidate_item.ITEMID MINUS 
+                              SELECT ITEMID FROM TEMP_TRANS, TRANS T2 WHERE T1.TRANSID = T2.TRANSID);
 
             temp_confidence := 100 * (no_of_hits_both / no_of_hits_with_set);
             temp_support := 100 * (no_of_hits_both / no_of_trans);
            
-            SELECT COUNT(*) INTO duplication_check FROM ASSOCIATIONRULES WHERE SETID = single_set.SETID AND ITEMID = candidate_item.ITEMID;
+            SELECT COUNT(*) INTO duplication_check 
+            FROM ASSOCIATIONRULES WHERE SETID = single_set.SETID AND ITEMID = candidate_item.ITEMID;
 
             IF temp_confidence >= confidence AND temp_support >= support AND duplication_check = 0 THEN
-                INSERT INTO ASSOCIATIONRULES VALUES (single_set.SETID, candidate_item.ITEMID, round(temp_support, 1), round(temp_confidence, 1));
+                INSERT INTO ASSOCIATIONRULES VALUES (single_set.SETID, candidate_item.ITEMID, 
+                                                     round(temp_support, 1), round(temp_confidence, 1));
             END IF;
         END LOOP;
     END LOOP;

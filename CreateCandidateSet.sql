@@ -25,7 +25,11 @@ BEGIN
                           FROM LARGESET LSA
                           WHERE LSA.SETID = setid_pair.IDA OR
                                 LSA.SETID = setid_pair.IDB);
-        SELECT COUNT(DISTINCT SETID) INTO duplicate_check FROM CANDIDATES C1 WHERE NOT EXISTS (SELECT * FROM TEMP MINUS SELECT ITEMID FROM CANDIDATES C2 WHERE C2.SETID = C1.SETID);
+        SELECT COUNT(DISTINCT SETID) INTO duplicate_check 
+        FROM CANDIDATES C1 
+        WHERE NOT EXISTS (SELECT * FROM TEMP MINUS 
+                          SELECT ITEMID 
+                          FROM CANDIDATES C2 WHERE C2.SETID = C1.SETID);
         IF duplicate_check = 0 THEN
             FOR single_item IN item_cursor LOOP
                 IF fill_counter = set_size THEN
